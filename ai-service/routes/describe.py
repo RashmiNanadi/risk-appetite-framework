@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from services.groq_client import groq_client
 import os
 
 describe_bp = Blueprint('describe', __name__)
