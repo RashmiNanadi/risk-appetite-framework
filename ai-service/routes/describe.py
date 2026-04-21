@@ -14,7 +14,7 @@ def describe():
         return jsonify({"error": "Missing risk_name or raw_data"}), 400
 
     try:
-        # 1. Read your Day 2 Prompt Template
+        # 1. Read Prompt Template
         prompt_path = os.path.join('prompts', 'risk_description.txt')
         with open(prompt_path, 'r') as f:
             template = f.read()
