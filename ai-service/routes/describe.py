@@ -1,36 +1,41 @@
-from flask import Blueprint, request, jsonify
 import os
+from datetime import datetime
+from flask import Blueprint, request, jsonify
+from services.groq_client import groq_client # Day 2: Integration depends on services/groq_client.py built by AI Developer 2 
+
 
 describe_bp = Blueprint('describe', __name__)
 
 @describe_bp.route('/describe', methods=['POST'])
-def describe():
-    data = request.json
-    risk_name = data.get('risk_name')
-    raw_data = data.get('raw_data')
-
-    if not risk_name or not raw_data:
-        return jsonify({"error": "Missing risk_name or raw_data"}), 400
+def describe_risk():
+    """
+    Day 3 Work: Handles raw risk data processing 
+    """
+    # Day 3: Validate input existence 
+    data = request.get_json()
+    if not data or 'raw_data' not in data:
+        return jsonify({"error": "Missing 'raw_data' field"}), 400
+    
+    raw_input = data['raw_data']
 
     try:
-        # 1. Read Prompt Template
+        # Day 2 Work: Load the refined prompt template 
         prompt_path = os.path.join('prompts', 'risk_description.txt')
         with open(prompt_path, 'r') as f:
             template = f.read()
 
-        # 2. Fill the placeholders in the template
-        filled_prompt = template.format(risk_name=risk_name, raw_data=raw_data)
-
-        # 3. Call the GroqClient engine
-        ai_response = groq_client.get_completion(
-            system_prompt="You are a professional Risk Management Consultant.",
-            user_input=filled_prompt
-        )
+        # Day 3 Work: Call Groq API and return structured JSON with timestamp 
+        ai_response = groq_client.call(f"{template}\n\nRaw Input: {raw_input}")# Uses Llama-3.3-70b
 
         return jsonify({
-            "risk_name": risk_name,
-            "description": ai_response
+            "description": ai_response,
+            "generated_at": datetime.utcnow().isoformat()
         }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Day 3: Controlled error handling to prevent 500 status codes 
+        return jsonify({
+            "error": "AI Service unavailable",
+            "message": str(e),
+            "is_fallback": True
+        }), 503
