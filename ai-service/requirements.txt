@@ -5,3 +5,4 @@ groq
 chromadb
 sentence-transformers
 flask-limiter
+langchain-text-splitters
