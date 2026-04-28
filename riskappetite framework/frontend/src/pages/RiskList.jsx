@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import ReportStream from '../components/ReportStream';
 
 export default function RiskList() {
   const [risks, setRisks] = useState([]);
@@ -11,13 +12,36 @@ export default function RiskList() {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
   const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const response = await api.get('/api/reports/export', {
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'risks-report.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      setError('Failed to export CSV');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const fetchRisks = async () => {
     setLoading(true);
     setError('');
     try {
       const response = await api.get('/api/risks', {
-        params: { page, size: 10, sortBy, sortDir, search }
+        params: { page, size: 10, sortBy, sortDir, search, status }
       });
 
       setRisks(response.data.content || response.data);
@@ -32,7 +56,7 @@ export default function RiskList() {
 
   useEffect(() => {
     fetchRisks();
-  }, [page, sortBy, sortDir, search]);
+  }, [page, sortBy, sortDir, search, status]);
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -43,7 +67,7 @@ export default function RiskList() {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (statusValue) => {
     const styles = {
       DRAFT: 'bg-gray-100 text-gray-700',
       ACTIVE: 'bg-blue-100 text-blue-700',
@@ -51,13 +75,12 @@ export default function RiskList() {
       APPROVED: 'bg-green-100 text-green-700',
       REJECTED: 'bg-red-100 text-red-700',
     };
-    return styles[status] || 'bg-gray-100 text-gray-700';
+    return styles[statusValue] || 'bg-gray-100 text-gray-700';
   };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-[#1B4F8A]">
           Risk Appetite Items
@@ -69,26 +92,51 @@ export default function RiskList() {
         >
           + Add Risk
         </Link>
+        
+        <button
+          onClick={handleExportCSV}
+          disabled={exporting}
+          className="bg-green-600 text-white px-5 py-2 rounded-lg shadow hover:bg-green-700 transition disabled:opacity-50"
+        >
+          {exporting ? 'Exporting...' : 'Export CSV'}
+        </button>
       </div>
 
-      {/* SEARCH */}
-      <div className="mb-4">
+      <div className="mb-4 flex gap-4">
         <input
           type="text"
           placeholder="Search risks..."
-          className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-[#1B4F8A]"
-          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-[#1B4F8A]"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
         />
+        
+        <select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(0);
+          }}
+          className="p-3 border rounded-xl focus:ring-2 focus:ring-[#1B4F8A] min-w-[150px]"
+        >
+          <option value="">All Statuses</option>
+          <option value="DRAFT">Draft</option>
+          <option value="ACTIVE">Active</option>
+          <option value="REVIEW">Review</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
       </div>
 
-      {/* ERROR */}
       {error && (
         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-sm">
           {error}
         </div>
       )}
 
-      {/* TABLE */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         <table className="min-w-full">
 
@@ -98,7 +146,7 @@ export default function RiskList() {
                 <th
                   key={col}
                   onClick={() => handleSort(col)}
-                  className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer hover:bg-gray-200"
                 >
                   {col}
                 </th>
@@ -124,13 +172,15 @@ export default function RiskList() {
               risks.map((risk) => (
                 <tr key={risk.id} className="border-b hover:bg-blue-50 transition">
                   <td className="px-6 py-4 font-medium text-blue-600">
-                    {risk.name}
+                    <Link to={`/risks/${risk.id}`} className="hover:underline">
+                      {risk.name}
+                    </Link>
                   </td>
 
                   <td className="px-6 py-4">{risk.category}</td>
 
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs ${getStatusBadge(risk.status)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(risk.status)}`}>
                       {risk.status}
                     </span>
                   </td>
@@ -142,7 +192,7 @@ export default function RiskList() {
                   <td className="px-6 py-4">
                     <Link
                       to={`/risks/${risk.id}/edit`}
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 hover:text-blue-800 font-medium"
                     >
                       Edit
                     </Link>
@@ -153,8 +203,7 @@ export default function RiskList() {
           </tbody>
         </table>
 
-        {/* PAGINATION */}
-        <div className="flex justify-between items-center p-4">
+        <div className="flex justify-between items-center p-4 bg-gray-50 border-t">
           <span className="text-sm text-gray-600">
             Page {page + 1} of {totalPages}
           </span>
@@ -163,7 +212,7 @@ export default function RiskList() {
             <button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+              className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-100 disabled:opacity-50 transition"
             >
               Prev
             </button>
@@ -171,7 +220,7 @@ export default function RiskList() {
             <button
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+              className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-100 disabled:opacity-50 transition"
             >
               Next
             </button>
@@ -179,6 +228,8 @@ export default function RiskList() {
         </div>
 
       </div>
+
+      <ReportStream />
     </div>
   );
 }

@@ -27,6 +27,13 @@ export default function Layout() {
               >
                 Risk Items
               </Link>
+              <Link
+                to="/analytics"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium"
+                style={{ color: isActive('/analytics') ? '#1B4F8A' : '#6B7280' }}
+              >
+                Analytics
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user?.username || 'User'}</span>

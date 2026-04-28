@@ -8,7 +8,8 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import RiskList from './pages/RiskList';
 import RiskDetail from './pages/RiskDetail';
-import RiskForm from './pages/RiskForm';
+import CreateEditForm from './pages/CreateEditForm';
+import Analytics from './pages/Analytics';
 import Layout from './components/Layout';
 
 function App() {
@@ -30,9 +31,10 @@ function App() {
             >
               <Route index element={<Dashboard />} />
               <Route path="risks" element={<RiskList />} />
-              <Route path="risks/new" element={<RiskForm />} />
+              <Route path="risks/new" element={<CreateEditForm />} />
               <Route path="risks/:id" element={<RiskDetail />} />
-              <Route path="risks/:id/edit" element={<RiskForm />} />
+              <Route path="risks/:id/edit" element={<CreateEditForm />} />
+              <Route path="analytics" element={<Analytics />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
