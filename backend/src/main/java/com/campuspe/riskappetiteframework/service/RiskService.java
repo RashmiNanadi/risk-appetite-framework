@@ -1,0 +1,77 @@
+package com.campuspe.riskappetiteframework.service;
+
+import com.campuspe.riskappetiteframework.dto.RiskDTO;
+import com.campuspe.riskappetiteframework.mapper.RiskMapper;
+import com.campuspe.riskappetiteframework.entity.Risk;
+import com.campuspe.riskappetiteframework.exception.ResourceNotFoundException;
+import com.campuspe.riskappetiteframework.repository.RiskRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+@Service
+public class RiskService {
+
+    private final RiskRepository riskRepository;
+
+    public RiskService(RiskRepository riskRepository) {
+        this.riskRepository = riskRepository;
+    }
+
+    // CREATE
+    public RiskDTO createRisk(RiskDTO dto) {
+    Risk risk = RiskMapper.toEntity(dto);
+    validateRisk(risk);
+
+    Risk savedRisk = riskRepository.save(risk);
+
+    return RiskMapper.toDTO(savedRisk);
+    }
+
+    // GET ALL (Paginated)
+    public Page<RiskDTO> getAllRisks(Pageable pageable) {
+    return riskRepository.findAll(pageable)
+            .map(RiskMapper::toDTO);
+    }
+
+    // GET BY ID
+    public RiskDTO getRiskById(Long id) {
+    Risk risk = riskRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Risk not found with id: " + id));
+
+    return RiskMapper.toDTO(risk);
+    }
+
+    // UPDATE
+    public Risk updateRisk(Long id, Risk updatedRisk) {
+        Risk existing = getRiskById(id);
+
+        existing.setTitle(updatedRisk.getTitle());
+        existing.setDescription(updatedRisk.getDescription());
+        existing.setCategory(updatedRisk.getCategory());
+        existing.setStatus(updatedRisk.getStatus());
+        existing.setRiskScore(updatedRisk.getRiskScore());
+        existing.setOwner(updatedRisk.getOwner());
+
+        return riskRepository.save(existing);
+    }
+
+    // DELETE
+    public void deleteRisk(Long id) {
+        Risk existing = getRiskById(id);
+        riskRepository.delete(existing);
+    }
+
+    // VALIDATION
+    private void validateRisk(Risk risk) {
+        if (risk.getTitle() == null || risk.getTitle().isEmpty()) {
+            throw new IllegalArgumentException("Title is required");
+        }
+
+        if (risk.getRiskScore() == null || risk.getRiskScore() < 0) {
+            throw new IllegalArgumentException("Risk score must be positive");
+        }
+    }
+}
