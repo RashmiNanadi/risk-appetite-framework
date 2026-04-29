@@ -1,13 +1,66 @@
+# .gitignore — Tool-04 Risk Appetite Framework
+# CRITICAL: This file must be committed on Day 1 BEFORE any other commit.
+# Committing .env or secrets to GitHub exposes them permanently — even
+# deleting the file later does not remove them from git history.
+
+# ── Secrets — NEVER commit these ──────────────────────────────────────────
 .env
+*.env
+.env.local
+.env.production
+
+# ── Python ────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 .Python
-env/
-venv/
-.venv
+*.egg-info/
 dist/
 build/
-*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+
+# ── pytest / coverage ─────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# ── ChromaDB vector store (large binary data — not for git) ───────────────
+chroma_data/
+*.chroma
+
+# ── Java / Spring Boot ────────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# ── Node / Frontend ───────────────────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+*.local
+
+# ── IDE / OS ──────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── Docker ────────────────────────────────────────────────────────────────
+# Keep docker-compose.yml — DO NOT ignore it
+# Ignore local override files
+docker-compose.override.yml
